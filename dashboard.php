@@ -143,7 +143,9 @@ td img {
 <div class="admin">
     <a href="admin.php">⚙ Adminbereich</a>
 </div>
-
+    <div class="spiele">
+        <a href="spiele.php">Spielplan</a>
+    </div>
 </div>
 
 </body>
