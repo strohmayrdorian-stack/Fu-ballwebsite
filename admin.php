@@ -105,7 +105,7 @@ $matches_res = mysqli_query($con, "
 <div class="nav">
     <a class="<?= $view==='teams'?'active':'' ?>" href="admin.php?view=teams">Teams</a>
     <a class="<?= $view==='matches'?'active':'' ?>" href="admin.php?view=matches">Matches</a>
-    <a href="main.php">Zurück</a>
+    <a href="dashboard.php">Zurück</a>
 </div>
 
 <?php if (!empty($msg)): ?>
