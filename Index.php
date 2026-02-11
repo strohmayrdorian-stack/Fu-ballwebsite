@@ -9,6 +9,7 @@ if (!$con) {
     die("Connection failed: " . mysqli_connect_error());
 }
 
+
 $user_in = $_POST['user'] ?? '';
 $pass_in = $_POST['pass'] ?? '';
 
