@@ -1,5 +1,21 @@
 <?php
 session_start();
+
+/* Nicht eingeloggt */
+if (!isset($_SESSION['login'])) {
+    header("Location: index.php");
+    exit;
+}
+
+/* Kein Admin */
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    http_response_code(403);
+    echo "Zugriff verweigert.";
+    exit;
+}
+
+
+session_start();
 if (!isset($_SESSION['login'])) die("Kein Zugriff");
 
 $con = mysqli_connect("localhost", "root", "", "FBV");
@@ -105,7 +121,7 @@ $matches_res = mysqli_query($con, "
 <div class="nav">
     <a class="<?= $view==='teams'?'active':'' ?>" href="admin.php?view=teams">Teams</a>
     <a class="<?= $view==='matches'?'active':'' ?>" href="admin.php?view=matches">Matches</a>
-    <a href="main.php">Zurück</a>
+    <a href="dashboard.php">Zurück</a>
 </div>
 
 <?php if (!empty($msg)): ?>

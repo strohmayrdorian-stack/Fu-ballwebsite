@@ -30,6 +30,11 @@ if (isset($_POST['login'])) {
         if (password_verify($pass_in, $row['password'])) {
             $_SESSION['login'] = true;
             $_SESSION['user'] = $user_in;
+            if($pass_in === mysqli_prepare(
+                            $con, "SELECT password FROM login WHERE username = 'admin'"))
+            {
+                $_SESSION['role'] = 'admin';
+            }
             header("Location: dashboard.php");
             exit;
         } else {
@@ -68,16 +73,24 @@ if (isset($_POST['login'])) {
         }
 
         .login-box input {
-            width: 100%;
+            width: 92.5%;
             padding: 12px;
             margin-bottom: 15px;
             border-radius: 8px;
             border: 1px solid #ccc;
         }
 
-        .login-box button,
-        .register-btn {
+        .login-box button
+        {
             width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 10px;
+        }
+        .register-btn {
+            width: 92.5%;
             padding: 12px;
             border-radius: 8px;
             font-size: 16px;
@@ -137,7 +150,7 @@ if (isset($_POST['login'])) {
     <a href="register.php" class="register-btn">Registrieren</a>
 
     <div class="footer">
-        © <?= date("Y") ?> Fußballclub
+        © <?= date("Y") ?> Fußballverwaltung - Fasching - Strohmayr
     </div>
 </div>
 
