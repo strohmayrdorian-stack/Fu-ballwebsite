@@ -158,7 +158,7 @@ if (!$res) {
 
     <div class="topbar">
         <div class="back">
-            <a href="main.php">← Zur Tabelle</a>
+            <a href="dashboard.php">← Zur Tabelle</a>
         </div>
 
         <div class="filters">
