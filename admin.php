@@ -1,5 +1,21 @@
 <?php
 session_start();
+
+/* Nicht eingeloggt */
+if (!isset($_SESSION['login'])) {
+    header("Location: index.php");
+    exit;
+}
+
+/* Kein Admin */
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    http_response_code(403);
+    echo "Zugriff verweigert.";
+    exit;
+}
+
+
+session_start();
 if (!isset($_SESSION['login'])) die("Kein Zugriff");
 
 // OPTIONAL (besser): nur Admins
