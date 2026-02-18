@@ -13,26 +13,46 @@ if (!$con) {
 
 if (isset($_POST['register'])) {
 
-    $user = $_POST['user'] ?? '';
+    $user = trim($_POST['user'] ?? '');
     $pass = $_POST['pass'] ?? '';
 
-    if (strlen($pass) < 4) {
+    if (empty($user) || empty($pass)) {
+        $fehler = "⚠️ Bitte alle Felder ausfüllen.";
+    }
+    elseif (strlen($pass) < 4) {
         $fehler = "⚠️ Passwort muss mindestens 4 Zeichen haben.";
-    } else {
+    }
+    else {
 
-        $hash = password_hash($pass, PASSWORD_DEFAULT);
-
-        $stmt = mysqli_prepare(
-            $con,
-            "INSERT INTO login (username, password) VALUES (?, ?)"
+        /* Prüfen ob Benutzer bereits existiert */
+        $check = mysqli_prepare(
+                $con,
+                "SELECT id FROM login WHERE username = ?"
         );
 
-        mysqli_stmt_bind_param($stmt, "ss", $user, $hash);
+        mysqli_stmt_bind_param($check, "s", $user);
+        mysqli_stmt_execute($check);
+        mysqli_stmt_store_result($check);
 
-        if (mysqli_stmt_execute($stmt)) {
-            $meldung = "✅ Registrierung erfolgreich! Du kannst dich jetzt einloggen.";
-        } else {
+        if (mysqli_stmt_num_rows($check) > 0) {
             $fehler = "⚠️ Benutzername existiert bereits.";
+        } else {
+
+            $hash = password_hash($pass, PASSWORD_DEFAULT);
+
+            /* Rolle direkt mit speichern */
+            $stmt = mysqli_prepare(
+                    $con,
+                    "INSERT INTO login (username, password, role) VALUES (?, ?, 'user')"
+            );
+
+            mysqli_stmt_bind_param($stmt, "ss", $user, $hash);
+
+            if (mysqli_stmt_execute($stmt)) {
+                $meldung = "✅ Registrierung erfolgreich! Du kannst dich jetzt einloggen.";
+            } else {
+                $fehler = "⚠️ Fehler bei der Registrierung.";
+            }
         }
     }
 }
@@ -64,7 +84,7 @@ if (isset($_POST['register'])) {
         }
 
         .box input {
-            width: 100%;
+            width: 92.5%;
             padding: 12px;
             margin-bottom: 15px;
             border-radius: 8px;
@@ -109,13 +129,12 @@ if (isset($_POST['register'])) {
 <div class="box">
     <h1>⚽ Registrieren</h1>
 
-
     <?php if ($meldung): ?>
-        <div class="message"><?= $meldung ?></div>
+        <div class="message"><?= htmlspecialchars($meldung) ?></div>
     <?php endif; ?>
 
     <?php if ($fehler): ?>
-        <div class="error"><?= $fehler ?></div>
+        <div class="error"><?= htmlspecialchars($fehler) ?></div>
     <?php endif; ?>
 
     <form method="post">
