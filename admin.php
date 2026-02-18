@@ -10,13 +10,43 @@ if (!isset($_SESSION['login'])) {
 /* Kein Admin */
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     http_response_code(403);
-    echo "Zugriff verweigert.";
+       ?>
+    <!DOCTYPE html>
+    <html lang="de">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="refresh" content="3;url=dashboard.php">
+        <title>Zugriff verweigert</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background: #f4f4f4;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+            }
+            .box {
+                background: white;
+                padding: 30px;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                text-align: center;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="box">
+            <h2>⛔ Zugriff verweigert</h2>
+            <p>Du wirst in 3 Sekunden zurück zum Dashboard weitergeleitet...</p>
+        </div>
+    </body>
+    </html>
+    <?php
     exit;
+
 }
 
-
-session_start();
-if (!isset($_SESSION['login'])) die("Kein Zugriff");
 
 $con = mysqli_connect("localhost", "root", "", "FBV");
 if (!$con) die("DB Verbindung fehlgeschlagen");

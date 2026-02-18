@@ -30,10 +30,11 @@ if (isset($_POST['login'])) {
         if (password_verify($pass_in, $row['password'])) {
             $_SESSION['login'] = true;
             $_SESSION['user'] = $user_in;
-            if($pass_in === mysqli_prepare(
-                            $con, "SELECT password FROM login WHERE username = 'admin'"))
-            {
+
+            if ($user_in === 'admin') {
                 $_SESSION['role'] = 'admin';
+            } else {
+                $_SESSION['role'] = 'user';
             }
             header("Location: dashboard.php");
             exit;
