@@ -42,8 +42,6 @@ if (isset($_POST['login'])) {
             $fehler = "⚠️ Benutzername oder Passwort falsch!";
         }
 
-    } else {
-        $fehler = "⚠️ Benutzername oder Passwort falsch!";
     }
 }
 ?>
