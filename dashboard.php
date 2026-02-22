@@ -140,9 +140,11 @@ td img {
 
 </table>
 
-<div class="admin">
-    <a href="admin.php">⚙ Adminbereich</a>
-</div>
+<?php if (isset($_SESSION['user']) && $_SESSION['user'] === 'admin'): ?>
+        <div class="admin">
+            <a href="admin.php">⚙ Adminbereich</a>
+        </div>
+    <?php endif; ?>
     <div class="spiele">
         <a href="spiele.php">Spielplan</a>
     </div>

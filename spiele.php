@@ -54,9 +54,11 @@ if (!$res) {
 }
 ?>
 
-<div class="admin">
-    <a href="admin.php">⚙ Adminbereich</a>
-</div>
+<?php if (isset($_SESSION['user']) && $_SESSION['user'] === 'admin'): ?>
+    <div class="admin">
+        <a href="admin.php">⚙ Adminbereich</a>
+    </div>
+<?php endif; ?>
 <!DOCTYPE html>
 <html lang="de">
 <head>
