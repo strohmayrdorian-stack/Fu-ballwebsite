@@ -120,7 +120,10 @@ if (isset($_POST['add_team'])) {
         $msg = "Teamname darf nicht leer sein!";
     } else {
         // Upload optional
-        [$ok, $filename, $err] = upload_team_logo("logo_file");
+        $result = upload_team_logo("logo_file");
+        $ok = $result[0];
+        $filename = $result[1];
+        $err = $result[2];
         if ($err !== "") {
             $msg = $err;
         } else {
@@ -164,7 +167,10 @@ if (isset($_POST['save_team'])) {
     }
 
     // Logo ersetzen (Upload)
-    [$ok, $filename, $err] = upload_team_logo("logo_file_edit");
+    $result = upload_team_logo("logo_file_edit");
+    $ok = $result[0];
+    $filename = $result[1];
+    $err = $result[2];
     if ($err !== "") {
         $msg = $err;
     } else {
