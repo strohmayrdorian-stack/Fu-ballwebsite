@@ -44,13 +44,7 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     </html>
     <?php
     exit;
-
 }
-
-if (!isset($_SESSION['login'])) die("Kein Zugriff");
-
-// OPTIONAL (besser): nur Admins
-// if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') die("Kein Admin Zugriff");
 
 $con = mysqli_connect("localhost", "root", "", "FBV");
 if (!$con) die("Datenbankverbindung fehlgeschlagen");
@@ -62,45 +56,133 @@ $view = $_GET['view'] ?? 'teams';
 if (!in_array($view, ['teams', 'matches'])) $view = 'teams';
 
 /* =========================
-   TEAMS: hinzufügen
+   Upload-Helper
+========================= */
+function upload_team_logo(string $fieldName, string $targetDir = "images/teams/"): array
+{
+    // return: [success(bool), filename(string), error(string)]
+    if (!isset($_FILES[$fieldName]) || $_FILES[$fieldName]['error'] === UPLOAD_ERR_NO_FILE) {
+        return [false, "", ""]; // kein Upload
+    }
+
+    $f = $_FILES[$fieldName];
+
+    if ($f['error'] !== UPLOAD_ERR_OK) {
+        return [false, "", "Upload-Fehler (Code: ".$f['error'].")"];
+    }
+
+    // Max 2MB
+    if ($f['size'] > 2 * 1024 * 1024) {
+        return [false, "", "Datei zu groß (max. 2MB)"];
+    }
+
+    // MIME prüfen
+    $finfo = finfo_open(FILEINFO_MIME_TYPE);
+    $mime = finfo_file($finfo, $f['tmp_name']);
+    finfo_close($finfo);
+
+    $allowed = [
+            'image/png'  => 'png',
+            'image/jpeg' => 'jpg',
+            'image/webp' => 'webp',
+            'image/gif'  => 'gif',
+    ];
+
+    if (!isset($allowed[$mime])) {
+        return [false, "", "Nur Bilder erlaubt (png, jpg, webp, gif)"];
+    }
+
+    // Zielordner anlegen wenn fehlt
+    if (!is_dir($targetDir)) {
+        @mkdir($targetDir, 0775, true);
+    }
+
+    // Sicherer Dateiname
+    $ext = $allowed[$mime];
+    $newName = "team_" . date("Ymd_His") . "_" . bin2hex(random_bytes(4)) . "." . $ext;
+    $destPath = rtrim($targetDir, "/") . "/" . $newName;
+
+    if (!move_uploaded_file($f['tmp_name'], $destPath)) {
+        return [false, "", "Konnte Datei nicht speichern (Rechte?)"];
+    }
+
+    return [true, $newName, ""];
+}
+
+/* =========================
+   TEAMS: hinzufügen (nur team + logo)
 ========================= */
 if (isset($_POST['add_team'])) {
     $team = trim($_POST['team'] ?? '');
-    $logo = trim($_POST['logo'] ?? ''); // optional
+    $logo = "";
 
     if ($team === '') {
         $msg = "Teamname darf nicht leer sein!";
     } else {
-        // WICHTIG: Insert-Felder müssen zu deiner liga-Tabelle passen.
-        // Ich nehme an: team, logo, punkte, tore, gegentore, spiele, siege, unentschieden, niederlagen existieren.
-        $stmt = mysqli_prepare($con, "
-            INSERT INTO liga (team, logo, punkte, tore, gegentore, spiele, siege, unentschieden, niederlagen)
-            VALUES (?, ?, 0, 0, 0, 0, 0, 0, 0)
-        ");
-        mysqli_stmt_bind_param($stmt, "ss", $team, $logo);
-
-        if (mysqli_stmt_execute($stmt)) {
-            $msg = "Team hinzugefügt!";
+        // Upload optional
+        [$ok, $filename, $err] = upload_team_logo("logo_file");
+        if ($err !== "") {
+            $msg = $err;
         } else {
-            $msg = "Fehler beim Hinzufügen: " . mysqli_error($con);
+            if ($ok) $logo = $filename;
+
+            // Wichtig: nur team+logo; andere Spalten können in der DB existieren, werden aber nicht mehr genutzt.
+            $stmt = mysqli_prepare($con, "INSERT INTO liga (team, logo) VALUES (?, ?)");
+            mysqli_stmt_bind_param($stmt, "ss", $team, $logo);
+
+            if (mysqli_stmt_execute($stmt)) {
+                $msg = "Team hinzugefügt!";
+            } else {
+                $msg = "Fehler beim Hinzufügen: " . mysqli_error($con);
+            }
         }
     }
 }
 
 /* =========================
-   TEAMS: bearbeiten
+   TEAMS: Logo ändern/löschen (keine Punkte etc.)
 ========================= */
 if (isset($_POST['save_team'])) {
     $id = (int)$_POST['id'];
-    $punkte = (int)$_POST['punkte'];
-    $tore = (int)$_POST['tore'];
-    $gegentore = (int)$_POST['gegentore'];
+    $delete_logo = isset($_POST['delete_logo']) ? 1 : 0;
 
-    $stmt = mysqli_prepare($con, "UPDATE liga SET punkte=?, tore=?, gegentore=? WHERE id=?");
-    mysqli_stmt_bind_param($stmt, "iiii", $punkte, $tore, $gegentore, $id);
-    mysqli_stmt_execute($stmt);
+    // Aktuelles Logo holen
+    $stmt0 = mysqli_prepare($con, "SELECT logo FROM liga WHERE id=?");
+    mysqli_stmt_bind_param($stmt0, "i", $id);
+    mysqli_stmt_execute($stmt0);
+    $res0 = mysqli_stmt_get_result($stmt0);
+    $row0 = mysqli_fetch_assoc($res0);
+    $currentLogo = $row0['logo'] ?? "";
 
-    $msg = "Team gespeichert!";
+    $newLogo = $currentLogo;
+
+    // Logo löschen
+    if ($delete_logo && $currentLogo !== "") {
+        $path = "images/teams/" . $currentLogo;
+        if (is_file($path)) @unlink($path);
+        $newLogo = "";
+    }
+
+    // Logo ersetzen (Upload)
+    [$ok, $filename, $err] = upload_team_logo("logo_file_edit");
+    if ($err !== "") {
+        $msg = $err;
+    } else {
+        if ($ok) {
+            // altes Logo löschen
+            if ($currentLogo !== "") {
+                $oldPath = "images/teams/" . $currentLogo;
+                if (is_file($oldPath)) @unlink($oldPath);
+            }
+            $newLogo = $filename;
+        }
+
+        $stmt = mysqli_prepare($con, "UPDATE liga SET logo=? WHERE id=?");
+        mysqli_stmt_bind_param($stmt, "si", $newLogo, $id);
+        mysqli_stmt_execute($stmt);
+
+        $msg = "Team gespeichert!";
+    }
 }
 
 /* =========================
@@ -108,6 +190,14 @@ if (isset($_POST['save_team'])) {
 ========================= */
 if (isset($_POST['delete_team'])) {
     $id = (int)$_POST['id'];
+
+    // Logo holen (für Datei löschen)
+    $stmt0 = mysqli_prepare($con, "SELECT logo FROM liga WHERE id=?");
+    mysqli_stmt_bind_param($stmt0, "i", $id);
+    mysqli_stmt_execute($stmt0);
+    $res0 = mysqli_stmt_get_result($stmt0);
+    $row0 = mysqli_fetch_assoc($res0);
+    $logo = $row0['logo'] ?? "";
 
     // Prüfen ob Team in spiele vorkommt
     $stmt = mysqli_prepare($con, "SELECT COUNT(*) AS c FROM spiele WHERE heim_id=? OR gast_id=?");
@@ -122,6 +212,12 @@ if (isset($_POST['delete_team'])) {
         $stmt2 = mysqli_prepare($con, "DELETE FROM liga WHERE id=?");
         mysqli_stmt_bind_param($stmt2, "i", $id);
         mysqli_stmt_execute($stmt2);
+
+        if ($logo !== "") {
+            $path = "images/teams/" . $logo;
+            if (is_file($path)) @unlink($path);
+        }
+
         $msg = "Team gelöscht!";
     }
 }
@@ -135,7 +231,6 @@ if (isset($_POST['add_match'])) {
     $datum = $_POST['datum'];
     $uhrzeit = $_POST['uhrzeit'];
 
-    // Tore optional
     $heim_tore = ($_POST['heim_tore'] === '') ? null : (int)$_POST['heim_tore'];
     $gast_tore = ($_POST['gast_tore'] === '') ? null : (int)$_POST['gast_tore'];
 
@@ -220,8 +315,9 @@ $matches_res = mysqli_query($con, "
         hr { margin: 12px 0; }
         .small { font-size:12px; color:#666; }
         .teamname { font-weight: bold; }
-        .logoimg { height:18px; vertical-align:middle; }
+        .logoimg { height:22px; vertical-align:middle; border-radius:4px; }
         .btn { cursor:pointer; }
+        .file { max-width: 260px; }
     </style>
 </head>
 <body>
@@ -242,35 +338,40 @@ $matches_res = mysqli_query($con, "
     <h1>Admin – Teams</h1>
 
     <h3>➕ Team hinzufügen</h3>
-    <form method="post" class="row">
+    <form method="post" class="row" enctype="multipart/form-data">
         Teamname:
         <input name="team" required placeholder="z.B. SV Pulkau">
 
-        Logo (optional):
-        <input name="logo" placeholder="z.B. pulkau.png">
+        Logo (Upload, optional):
+        <input class="file" type="file" name="logo_file" accept="image/png,image/jpeg,image/webp,image/gif">
 
         <button class="btn" name="add_team">Hinzufügen</button>
     </form>
-    <div class="small">Logo-Datei liegt in <code>images/teams/</code> (wie bei dir in main.php).</div>
+    <div class="small">Uploads landen in <code>images/teams/</code> (max 2MB, png/jpg/webp/gif).</div>
 
     <hr>
 
-    <h3>✏ Teams bearbeiten</h3>
+    <h3>✏ Teams bearbeiten (nur Logo)</h3>
 
     <?php while ($t = mysqli_fetch_assoc($teams_res)): ?>
-        <form method="post" class="row">
+        <form method="post" class="row" enctype="multipart/form-data">
             <input type="hidden" name="id" value="<?= (int)$t['id'] ?>">
 
             <span class="teamname">
-        <?php if (!empty($t['logo'])): ?>
-            <img class="logoimg" src="images/teams/<?= htmlspecialchars($t['logo']) ?>" alt="">
-        <?php endif; ?>
+                <?php if (!empty($t['logo'])): ?>
+                    <img class="logoimg" src="images/teams/<?= htmlspecialchars($t['logo']) ?>" alt="">
+                <?php endif; ?>
                 <?= htmlspecialchars($t['team']) ?>
-      </span>
+            </span>
 
-            Punkte: <input name="punkte" value="<?= (int)$t['punkte'] ?>" size="3">
-            Tore: <input name="tore" value="<?= (int)$t['tore'] ?>" size="3">
-            Gegentore: <input name="gegentore" value="<?= (int)$t['gegentore'] ?>" size="3">
+            Logo ändern:
+            <input class="file" type="file" name="logo_file_edit" accept="image/png,image/jpeg,image/webp,image/gif">
+
+            <?php if (!empty($t['logo'])): ?>
+                <label class="small">
+                    <input type="checkbox" name="delete_logo"> Logo löschen
+                </label>
+            <?php endif; ?>
 
             <button class="btn" name="save_team">💾</button>
             <button class="btn" name="delete_team" onclick="return confirm('Team wirklich löschen? (nur möglich wenn keine Matches existieren)')">🗑</button>
@@ -320,11 +421,11 @@ $matches_res = mysqli_query($con, "
                 <input type="hidden" name="id" value="<?= (int)$m['id'] ?>">
 
                 <span>
-          <strong><?= htmlspecialchars($m['heim_team']) ?></strong>
-          vs
-          <strong><?= htmlspecialchars($m['gast_team']) ?></strong>
-          (<?= htmlspecialchars($m['datum']) ?> <?= htmlspecialchars($m['uhrzeit']) ?>)
-        </span>
+                    <strong><?= htmlspecialchars($m['heim_team']) ?></strong>
+                    vs
+                    <strong><?= htmlspecialchars($m['gast_team']) ?></strong>
+                    (<?= htmlspecialchars($m['datum']) ?> <?= htmlspecialchars($m['uhrzeit']) ?>)
+                </span>
 
                 Heimtore:
                 <input type="number" name="heim_tore" min="0" value="<?= $m['heim_tore'] ?? '' ?>" style="width:70px">
