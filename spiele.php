@@ -53,12 +53,6 @@ if (!$res) {
     die("SQL Fehler: " . mysqli_error($con));
 }
 ?>
-
-<?php if (isset($_SESSION['user']) && $_SESSION['user'] === 'admin'): ?>
-    <div class="admin">
-        <a href="admin.php">⚙ Adminbereich</a>
-    </div>
-<?php endif; ?>
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -82,7 +76,10 @@ if (!$res) {
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
 
-        h1 { text-align: center; margin-bottom: 10px; }
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
 
         .topbar {
             display: flex;
@@ -93,13 +90,23 @@ if (!$res) {
             margin-bottom: 15px;
         }
 
+        .topbar-left,
+        .topbar-center,
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
         .topbar a {
             text-decoration: none;
             font-weight: bold;
         }
 
-        .back a { color: #0b6623; }
-        .logout a { color: red; }
+        .back a {
+            color: #0b6623;
+        }
 
         .filters a {
             padding: 8px 12px;
@@ -116,10 +123,55 @@ if (!$res) {
             border-color: #0b6623;
         }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 10px; text-align: center; }
-        th { background: #0b6623; color: white; }
-        tr:nth-child(even) { background: #f2f2f2; }
+        .btn {
+            display: inline-block;
+            padding: 10px 16px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+
+        .btn-admin {
+            background: #1fa84f;
+            color: white !important;
+        }
+
+        .btn-admin:hover {
+            background: #15803d;
+            transform: translateY(-2px);
+        }
+
+        .btn-logout {
+            background: #e53935;
+            color: white !important;
+        }
+
+        .btn-logout:hover {
+            background: #b71c1c;
+            transform: translateY(-2px);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background: #0b6623;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background: #f2f2f2;
+        }
 
         .teamcell {
             text-align: left;
@@ -139,8 +191,14 @@ if (!$res) {
             font-size: 12px;
             display: inline-block;
         }
-        .badge.finished { background: #dff5e3; }
-        .badge.upcoming { background: #fff2cc; }
+
+        .badge.finished {
+            background: #dff5e3;
+        }
+
+        .badge.upcoming {
+            background: #fff2cc;
+        }
 
         .score {
             font-weight: bold;
@@ -159,18 +217,28 @@ if (!$res) {
 <div class="container">
 
     <div class="topbar">
-        <div class="back">
-            <a href="dashboard.php">← Zur Tabelle</a>
+        <div class="topbar-left">
+            <div class="back">
+                <a href="dashboard.php">← Zur Tabelle</a>
+            </div>
         </div>
 
-        <div class="filters">
-            <a class="<?= $filter==='all'?'active':'' ?>" href="spiele.php?filter=all">Alle</a>
-            <a class="<?= $filter==='upcoming'?'active':'' ?>" href="spiele.php?filter=upcoming">Kommend</a>
-            <a class="<?= $filter==='finished'?'active':'' ?>" href="spiele.php?filter=finished">Beendet</a>
+        <div class="topbar-center">
+            <div class="filters">
+                <a class="<?= $filter==='all'?'active':'' ?>" href="spiele.php?filter=all">Alle</a>
+                <a class="<?= $filter==='upcoming'?'active':'' ?>" href="spiele.php?filter=upcoming">Kommend</a>
+                <a class="<?= $filter==='finished'?'active':'' ?>" href="spiele.php?filter=finished">Beendet</a>
+            </div>
         </div>
 
-        <div class="logout">
-            <a href="logout.php">Logout</a>
+        <div class="topbar-right">
+            <?php if (isset($_SESSION['user']) && $_SESSION['user'] === 'admin'): ?>
+                <a href="admin.php" class="btn btn-admin">⚙ Adminbereich</a>
+            <?php endif; ?>
+
+            <div class="logout">
+                <a href="logout.php" class="btn btn-logout">Logout</a>
+            </div>
         </div>
     </div>
 
