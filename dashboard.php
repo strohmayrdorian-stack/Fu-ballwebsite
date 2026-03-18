@@ -252,6 +252,5 @@ if (!$res) die("Standings Fehler: " . mysqli_error($con));
     </div>
 
 </div>
-
 </body>
 </html>
