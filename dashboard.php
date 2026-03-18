@@ -54,17 +54,19 @@ SELECT
     ELSE 0
   END),0) AS gegentore,
 
-  (COALESCE(SUM(CASE
-    WHEN s.heim_id = l.id AND s.heim_tore IS NOT NULL AND s.gast_tore IS NOT NULL THEN s.heim_tore
-    WHEN s.gast_id = l.id AND s.heim_tore IS NOT NULL AND s.gast_tore IS NOT NULL THEN s.gast_tore
-    ELSE 0
-  END),0)
-  -
-  COALESCE(SUM(CASE
-    WHEN s.heim_id = l.id AND s.heim_tore IS NOT NULL AND s.gast_tore IS NOT NULL THEN s.gast_tore
-    WHEN s.gast_id = l.id AND s.heim_tore IS NOT NULL AND s.gast_tore IS NOT NULL THEN s.heim_tore
-    ELSE 0
-  END),0)) AS tordiff,
+  (
+    COALESCE(SUM(CASE
+      WHEN s.heim_id = l.id AND s.heim_tore IS NOT NULL AND s.gast_tore IS NOT NULL THEN s.heim_tore
+      WHEN s.gast_id = l.id AND s.heim_tore IS NOT NULL AND s.gast_tore IS NOT NULL THEN s.gast_tore
+      ELSE 0
+    END),0)
+    -
+    COALESCE(SUM(CASE
+      WHEN s.heim_id = l.id AND s.heim_tore IS NOT NULL AND s.gast_tore IS NOT NULL THEN s.gast_tore
+      WHEN s.gast_id = l.id AND s.heim_tore IS NOT NULL AND s.gast_tore IS NOT NULL THEN s.heim_tore
+      ELSE 0
+    END),0)
+  ) AS tordiff,
 
   COALESCE(SUM(CASE
     WHEN s.heim_id = l.id AND s.heim_tore IS NOT NULL AND s.gast_tore IS NOT NULL AND s.heim_tore > s.gast_tore THEN 3
@@ -159,7 +161,6 @@ if (!$res) die("Standings Fehler: " . mysqli_error($con));
             margin-top: 8px;
         }
 
-        /* 🔥 NEUE BUTTONS */
         .btn {
             display: inline-block;
             padding: 10px 18px;
@@ -212,6 +213,7 @@ if (!$res) die("Standings Fehler: " . mysqli_error($con));
             <th>N</th>
             <th>T</th>
             <th>GT</th>
+            <th>TD</th>
             <th>P</th>
         </tr>
 
@@ -235,6 +237,11 @@ if (!$res) die("Standings Fehler: " . mysqli_error($con));
                 <td><?= (int)$row['niederlagen'] ?></td>
                 <td><?= (int)$row['tore'] ?></td>
                 <td><?= (int)$row['gegentore'] ?></td>
+
+                <td>
+                    <?= ($row['tordiff'] > 0 ? '+' : '') . (int)$row['tordiff'] ?>
+                </td>
+
                 <td><strong><?= (int)$row['punkte'] ?></strong></td>
             </tr>
             <?php $platz++; endwhile; ?>
