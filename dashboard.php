@@ -149,12 +149,6 @@ if (!$res) die("Standings Fehler: " . mysqli_error($con));
             margin-bottom: 10px;
         }
 
-        .logout a {
-            text-decoration: none;
-            color: red;
-            font-weight: bold;
-        }
-
         .admin {
             text-align: right;
             margin-top: 15px;
@@ -164,6 +158,37 @@ if (!$res) die("Standings Fehler: " . mysqli_error($con));
             text-align: right;
             margin-top: 8px;
         }
+
+        /* 🔥 NEUE BUTTONS */
+        .btn {
+            display: inline-block;
+            padding: 10px 18px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .btn-green {
+            background: #1fa84f;
+            color: white;
+        }
+
+        .btn-green:hover {
+            background: #15803d;
+            transform: translateY(-2px);
+        }
+
+        .btn-logout {
+            background: #e53935;
+            color: white;
+        }
+
+        .btn-logout:hover {
+            background: #b71c1c;
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 
@@ -172,7 +197,7 @@ if (!$res) die("Standings Fehler: " . mysqli_error($con));
 <div class="container">
 
     <div class="logout">
-        <a href="logout.php">Logout</a>
+        <a href="logout.php" class="btn btn-logout">Logout</a>
     </div>
 
     <h1>⚽ Fußball Tabelle</h1>
@@ -218,12 +243,12 @@ if (!$res) die("Standings Fehler: " . mysqli_error($con));
 
     <?php if (isset($_SESSION['role']) && $_SESSION['role'] === 'admin'): ?>
         <div class="admin">
-            <a href="admin.php">⚙ Adminbereich</a>
+            <a href="admin.php" class="btn btn-green">⚙ Adminbereich</a>
         </div>
     <?php endif; ?>
 
     <div class="spiele">
-        <a href="spiele.php">Spielplan</a>
+        <a href="spiele.php" class="btn btn-green">Spielplan</a>
     </div>
 
 </div>
