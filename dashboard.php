@@ -259,5 +259,8 @@ if (!$res) die("Standings Fehler: " . mysqli_error($con));
     </div>
 
 </div>
+<footer style="margin-top:30px; padding-top:15px; border-top:1px solid #ddd; text-align:center; color:#FFFF; font-size:14px;">
+    © <?= date("Y") ?> Fußballverwaltung - Fasching - Strohmayr
+</footer>
 </body>
 </html>

@@ -152,6 +152,5 @@ if (isset($_POST['login'])) {
         © <?= date("Y") ?> Fußballverwaltung - Fasching - Strohmayr
     </div>
 </div>
-
 </body>
 </html>
